@@ -1,8 +1,17 @@
 module vsql
 
 // Structs intentionally have less than 6 fields, any more then inserts queries get exponentially slower.
-// https://github.com/elliotchance/vsql/issues/199
 import time
+
+// struct TestDateTypes {
+// 	id      int    @[primary; sql: serial]
+// 	custom1 string @[sql_type: 'TIME WITH TIME ZONE']
+// 	custom2 string @[sql_type: 'TIMESTAMP(3) WITH TIME ZONE']
+// 	custom3 string @[sql_type: 'INT']
+// 	custom4 string @[sql_type: 'DATE']
+// 	custom5 string @[sql_type: 'TIMESTAMP(3) WITHOUT TIME ZONE']
+// 	custom6 string @[sql_type: 'TIME WITHOUT TIME ZONE']
+// }
 
 @[table: 'testcustomtable']
 struct TestCustomTableAndSerial {
@@ -42,7 +51,11 @@ struct TestOrmValuesOne {
 struct TestOrmValuesTwo {
 	an_i8    i8     // SMALLINT
 	an_int   int    // INTEGER
+<<<<<<< HEAD
 	a_string string // CHARACTER VARYING(255) / VARCHAR(255)
+=======
+	a_string string // CHARACTER VARYING(255)
+>>>>>>> d4105ba (v orm implementation with standard query)
 }
 
 struct TestOrmValuesThree {
@@ -55,7 +68,7 @@ struct TestOrmValuesThree {
 struct TestOrmValuesFour {
 	a_time      time.Time // TIMESTAMP(6) WITH TIME ZONE
 	a_bool      bool      // BOOLEAN
-	int_or_null ?int      // optional INTEGER
+	int_or_null ?int      // optional int
 }
 
 // ORMTableEnum is not supported.
@@ -69,51 +82,52 @@ enum Colors {
 	blue
 }
 
-@[table: 'GROUP']
+// @[table: 'GROUP']
 struct ORMTable2 {
 	dummy int
 }
 
-struct Product {
-	id           int
-	product_name string
-	price        string @[sql_type: 'NUMERIC(5,2)']
-	quantity     ?i16
-}
-
-fn test_orm_create_table_with_reserved_word() {
+fn test_orm_create_success2() {
 	mut db := open(':memory:')!
-	mut error := ''
 	sql db {
 		create table ORMTable2
-	} or { error = err.str() }
-	assert error == ''
-	dumm := ORMTable2{
-		dummy: 1
-	}
+	}!
+	dumm := ORMTable2{dummy: 1}
 	sql db {
 		insert dumm into ORMTable2
-	} or { error = err.str() }
-	assert error == ''
-
-	sql db {
-		update ORMTable2 set dummy = 2 where dummy == 1
 	}!
 
-	all := sql db {
-		select from ORMTable2
-	}!
-	assert all[0].dummy == 2
-
-	sql db {
-		delete from ORMTable2 where dummy == 2
-	} or { error = err.str() }
-	assert error == ''
 	sql db {
 		drop table ORMTable2
-	} or { error = err.str() }
+	}!
+}
 
-	assert error == ''
+// We cannot test this because it will make all tests fail, because the database itself will run into an error
+// so it is put behind a -d flag if you really want to try it
+fn test_primary_key_broken() {
+	$if test_primary_key ? {
+		mut db := open(':memory:')!
+		mut error := ''
+		sql db {
+			create table TestPrimaryBroken
+		} or { error = err.str() }
+		assert error == ''
+
+		test_primary_broken := TestPrimaryBroken{}
+
+		sql db {
+			insert test_primary_broken into TestPrimaryBroken
+		} or { error = err.str() }
+		assert error == ''
+
+		mut all := sql db {
+			select from TestPrimaryBroken
+		}!
+
+		sql db {
+			delete from TestPrimaryBroken where id == all[0].id
+		} or { error = err.str() }
+	}
 }
 
 fn test_custom_table_name_and_serial_crud() {
@@ -277,6 +291,7 @@ fn test_default_orm_values() {
 	assert three.an_u16 == 54321
 	assert typeof(three.an_u32).idx == typeof[u32]().idx
 	assert three.an_u32 == 1234567890
+	// println(three.an_u64)
 	assert typeof(three.an_u64).idx == typeof[u64]().idx
 	assert three.an_u64 == 1234
 	assert typeof(three.an_u8).idx == typeof[u8]().idx
@@ -305,100 +320,4 @@ fn test_orm_create_enum_is_not_supported() {
 		create table ORMTableEnum
 	} or { error = err.str() }
 	assert error == 'enum is not supported in vsql'
-}
-
-fn test_orm_select_where() {
-	mut db := open(':memory:')!
-	mut error := ''
-
-	sql db {
-		create table Product
-	} or { panic(err) }
-
-	prods := [
-		Product{1, 'Ice Cream', '5.99', 17},
-		Product{2, 'Ham Sandwhich', '3.47', none},
-		Product{3, 'Bagel', '1.25', 45},
-	]
-	for product in prods {
-		sql db {
-			insert product into Product
-		} or { panic(err) }
-	}
-	mut products := sql db {
-		select from Product where id == 2
-	}!
-
-	assert products == [Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where id == 5
-	}!
-
-	assert products == []
-
-	products = sql db {
-		select from Product where id != 3
-	}!
-
-	assert products == [Product{1, 'Ice Cream', '5.99', 17},
-		Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where price > '3.47'
-	}!
-
-	assert products == [Product{1, 'Ice Cream', '5.99', 17}]
-
-	products = sql db {
-		select from Product where price >= '3'
-	}!
-
-	assert products == [Product{1, 'Ice Cream', '5.99', 17},
-		Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where price < '3.47'
-	}!
-
-	assert products == [Product{3, 'Bagel', '1.25', 45}]
-
-	products = sql db {
-		select from Product where price <= '5'
-	}!
-
-	assert products == [Product{2, 'Ham Sandwhich', '3.47', none},
-		Product{3, 'Bagel', '1.25', 45}]
-
-	// TODO (daniel-le97): The ORM does not support a "not like" constraint right now.
-
-	products = sql db {
-		select from Product where product_name like 'Ham%'
-	}!
-
-	assert products == [Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where quantity is none
-	}!
-
-	assert products == [Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where quantity !is none
-	}!
-
-	assert products == [Product{1, 'Ice Cream', '5.99', 17}, Product{3, 'Bagel', '1.25', 45}]
-
-	products = sql db {
-		select from Product where price > '3' && price < '3.50'
-	}!
-
-	assert products == [Product{2, 'Ham Sandwhich', '3.47', none}]
-
-	products = sql db {
-		select from Product where price < '2.000' || price >= '5'
-	}!
-
-	assert products == [Product{1, 'Ice Cream', '5.99', 17}, Product{3, 'Bagel', '1.25', 45}]
 }

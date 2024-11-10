@@ -60,6 +60,7 @@ fn (e BooleanValueExpression) compile(mut c Compiler) !CompileResult {
 
 		return CompileResult{
 			run:          fn [compiled_a, compiled_b] (mut conn Connection, data Row, params map[string]Value) !Value {
+			run:          fn [compiled_a, compiled_b] (mut conn Connection, data Row, params map[string]Value) !Value {
 				a := compiled_a.run(mut conn, data, params)!
 				b := compiled_b.run(mut conn, data, params)!
 
@@ -80,6 +81,7 @@ fn (e BooleanValueExpression) compile(mut c Compiler) !CompileResult {
 
 				return b
 			}
+			typ:          new_type('BOOLEAN', 0, 0)
 			typ:          new_type('BOOLEAN', 0, 0)
 			contains_agg: compiled_a.contains_agg || compiled_b.contains_agg
 		}
@@ -108,6 +110,7 @@ fn (e BooleanTerm) compile(mut c Compiler) !CompileResult {
 
 		return CompileResult{
 			run:          fn [compiled_a, compiled_b] (mut conn Connection, data Row, params map[string]Value) !Value {
+			run:          fn [compiled_a, compiled_b] (mut conn Connection, data Row, params map[string]Value) !Value {
 				a := compiled_a.run(mut conn, data, params)!
 				b := compiled_b.run(mut conn, data, params)!
 
@@ -128,6 +131,7 @@ fn (e BooleanTerm) compile(mut c Compiler) !CompileResult {
 
 				return new_boolean_value(false)
 			}
+			typ:          new_type('BOOLEAN', 0, 0)
 			typ:          new_type('BOOLEAN', 0, 0)
 			contains_agg: compiled_a.contains_agg || compiled_b.contains_agg
 		}
@@ -180,6 +184,7 @@ fn (e BooleanTest) compile(mut c Compiler) !CompileResult {
 	if v := e.value {
 		return CompileResult{
 			run:          fn [e, v, compiled] (mut conn Connection, data Row, params map[string]Value) !Value {
+			run:          fn [e, v, compiled] (mut conn Connection, data Row, params map[string]Value) !Value {
 				// See ISO/IEC 9075-2:2016(E), 6.39, <boolean value expression>,
 				// "Table 15 — Truth table for the IS boolean operator"
 
@@ -204,6 +209,7 @@ fn (e BooleanTest) compile(mut c Compiler) !CompileResult {
 				return e.unary_not(result)!
 			}
 			typ:          new_type('BOOLEAN', 0, 0)
+			typ:          new_type('BOOLEAN', 0, 0)
 			contains_agg: compiled.contains_agg
 		}
 	}
@@ -215,6 +221,7 @@ fn (e BooleanTest) compile(mut c Compiler) !CompileResult {
 		typ:          compiled.typ
 		contains_agg: compiled.contains_agg
 	}
+}
 
 	return compiled
 }

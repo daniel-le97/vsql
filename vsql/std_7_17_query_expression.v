@@ -170,6 +170,7 @@ fn (mut o OrderOperation) execute(rows []Row) ![]Row {
 		if head_cmp < 0 {
 			head = &RowLink{
 				row:  row
+				row:  row
 				next: head
 			}
 			continue
@@ -182,6 +183,7 @@ fn (mut o OrderOperation) execute(rows []Row) ![]Row {
 			cmp := row_cmp(mut o.conn, o.params, row, cursor.next.row, o.order)!
 			if cmp < 0 {
 				cursor.next = &RowLink{
+					row:  row
 					row:  row
 					next: cursor.next
 				}
@@ -229,6 +231,7 @@ fn (l &RowLink) rows() []Row {
 
 fn row_cmp(mut conn Connection, params map[string]Value, r1 Row, r2 Row, specs []SortSpecification) !int {
 	mut c := Compiler{
+		conn:   conn
 		conn:   conn
 		params: params
 	}
@@ -374,6 +377,7 @@ fn (o &LimitOperation) columns() Columns {
 
 fn (mut o LimitOperation) execute(rows []Row) ![]Row {
 	mut c := Compiler{
+		conn:   o.conn
 		conn:   o.conn
 		params: o.params
 	}

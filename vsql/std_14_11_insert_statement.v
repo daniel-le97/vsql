@@ -76,6 +76,8 @@ fn (stmt InsertStatement) execute(mut conn Connection, params map[string]Value, 
 		mut c := Compiler{
 			conn:      conn
 			params:    params
+			conn:      conn
+			params:    params
 			null_type: table_column.typ
 		}
 		raw_value := values[i].compile(mut c)!.run(mut conn, Row{}, params)!

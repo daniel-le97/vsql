@@ -31,6 +31,8 @@ pub fn new_server(options ServerOptions) Server {
 		catalog_name: catalog_name
 		storage:      new_storage(btree)
 		options:      default_connection_options()
+		storage:      new_storage(btree)
+		options:      default_connection_options()
 	}
 
 	return Server{options, &Connection{

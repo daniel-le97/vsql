@@ -111,6 +111,7 @@ fn open_connection(path string, options ConnectionOptions) !&Connection {
 	catalog_name := catalog_name_from_path(path)
 
 	mut conn := &Connection{
+		query_cache: options.query_cache
 		current_catalog: catalog_name
 		current_schema:  default_schema_name
 		now:             default_now
@@ -523,8 +524,9 @@ pub mut:
 // the correct base to provide your own option overrides. See ConnectionOptions.
 pub fn default_connection_options() ConnectionOptions {
 	return ConnectionOptions{
+		query_cache: new_query_cache()
 		page_size: 4096
-		mutex:     sync.new_rwmutex()
+		mutex: sync.new_rwmutex()
 	}
 }
 

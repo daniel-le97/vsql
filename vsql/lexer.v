@@ -3,161 +3,30 @@
 
 module vsql
 
-// YYSym allows for every possible type that needs to pass through $$ rules in
-// the grammar. If V ever supports some kind of "any" type this would be a
-// little easier.
-type YYSym = AggregateFunction
-	| AggregateFunctionCount
-	| AlterSequenceGeneratorStatement
-	| BetweenPredicate
-	| BooleanPredicand
-	| BooleanPrimary
-	| BooleanTerm
-	| BooleanTest
-	| BooleanValueExpression
-	| CaseExpression
-	| CastOperand
-	| CastSpecification
-	| CharacterLikePredicate
-	| CharacterPrimary
-	| CharacterSubstringFunction
-	| CharacterValueExpression
-	| CharacterValueFunction
-	| Column
-	| CommonValueExpression
-	| ComparisonPredicate
-	| ComparisonPredicatePart2
-	| Concatenation
-	| ContextuallyTypedRowValueConstructor
-	| ContextuallyTypedRowValueConstructorElement
-	| Correlation
-	| CurrentDate
-	| CurrentTime
-	| CurrentTimestamp
-	| DatetimePrimary
-	| DatetimeValueFunction
-	| DerivedColumn
-	| ExplicitRowValueConstructor
-	| GeneralValueSpecification
-	| Identifier
-	| IdentifierChain
-	| InsertStatement
-	| LocalTime
-	| LocalTimestamp
-	| NextValueExpression
-	| NonparenthesizedValueExpressionPrimary
-	| NullPredicate
-	| NullSpecification
-	| NumericPrimary
-	| NumericValueExpression
-	| ParenthesizedValueExpression
-	| Predicate
-	| QualifiedAsteriskExpr
-	| QualifiedJoin
-	| QueryExpression
-	| QuerySpecification
-	| RoutineInvocation
-	| RowValueConstructor
-	| RowValueConstructorPredicand
-	| SelectList
-	| SequenceGeneratorDefinition
-	| SequenceGeneratorIncrementByOption
-	| SequenceGeneratorMaxvalueOption
-	| SequenceGeneratorMinvalueOption
-	| SequenceGeneratorOption
-	| SequenceGeneratorRestartOption
-	| SequenceGeneratorStartWithOption
-	| SetSchemaStatement
-	| SimilarPredicate
-	| SimpleTable
-	| SortSpecification
-	| Stmt
-	| Table
-	| TableElement
-	| TableExpression
-	| TablePrimary
-	| TableReference
-	| Term
-	| TrimFunction
-	| Type
-	| UniqueConstraintDefinition
-	| UpdateSource
-	| Value
-	| ValueExpression
-	| ValueExpressionPrimary
-	| ValueSpecification
-	| []ContextuallyTypedRowValueConstructor
-	| []ContextuallyTypedRowValueConstructorElement
-	| []DerivedColumn
-	| []Identifier
-	| []RowValueConstructor
-	| []SequenceGeneratorOption
-	| []SortSpecification
-	| []TableElement
-	| []ValueExpression
-	| bool
-	| map[string]UpdateSource
-	| string
-
-// YYSymType is the yacc internal type for the stack that contains the symbols
-// to reduce (pass to the code). The only requirement here is that `yys` is
-// included as it contains the position of the token.
-struct YYSymType {
-mut:
-	v   YYSym
-	yys int
-}
-
-struct Lexer {
-mut:
-	tokens []Token
-	pos    int
-}
-
-fn (mut l Lexer) lex(mut lval YYSymType) int {
-	if l.pos >= l.tokens.len {
-		return 0
-	}
-
-	l.pos++
-	unsafe {
-		*lval = l.tokens[l.pos - 1].sym
-	}
-	return l.tokens[l.pos - 1].token
-}
-
-fn (mut l Lexer) error(s string) ! {
-	return sqlstate_42601(cleanup_yacc_error(s))
-}
-
-fn cleanup_yacc_error(s string) string {
-	mut msg := s
-
-	msg = msg.replace('OPERATOR_COMMA', '","')
-	msg = msg.replace('OPERATOR_RIGHT_PAREN', '")"')
-	msg = msg.replace('OPERATOR_DOUBLE_PIPE', '"||"')
-	msg = msg.replace('OPERATOR_PLUS', '"+"')
-	msg = msg.replace('OPERATOR_MINUS', '"-"')
-	msg = msg.replace('OPERATOR_SEMICOLON', '";"')
-	msg = msg.replace('OPERATOR_EQUALS', '"="')
-	msg = msg.replace('OPERATOR_LEFT_PAREN', '"("')
-	msg = msg.replace('OPERATOR_ASTERISK', '"*"')
-	msg = msg.replace('OPERATOR_PERIOD', '"."')
-	msg = msg.replace('OPERATOR_SOLIDUS', '"/"')
-	msg = msg.replace('OPERATOR_COLON', '":"')
-	msg = msg.replace('OPERATOR_LESS_THAN', '"<"')
-	msg = msg.replace('OPERATOR_GREATER_THAN', '">"')
-	msg = msg.replace('OPERATOR_NOT_EQUALS', '"<>"')
-	msg = msg.replace('OPERATOR_GREATER_EQUALS', '">="')
-	msg = msg.replace('OPERATOR_LESS_EQUALS', '"<="')
-	msg = msg.replace('OPERATOR_PERIOD_ASTERISK', '"." "*"')
-	msg = msg.replace('OPERATOR_LEFT_PAREN_ASTERISK', '"(" "*"')
-
-	msg = msg.replace('LITERAL_IDENTIFIER', 'identifier')
-	msg = msg.replace('LITERAL_STRING', 'string')
-	msg = msg.replace('LITERAL_NUMBER', 'number')
-
-	return msg['syntax error: '.len..]
+// Except for the eof and the keywords, the other tokens use the names described
+// in the SQL standard.
+enum TokenKind {
+	asterisk                        // <asterisk> ::= *
+	colon                           // <colon> ::= :
+	comma                           // <comma> ::= ,
+	concatenation_operator          // <concatenation operator> ::= ||
+	equals_operator                 // <equals operator> ::= =
+	greater_than_operator           // <greater than operator> ::= >
+	greater_than_or_equals_operator // <greater than or equals operator> ::= >=
+	keyword
+	left_paren                   // <left paren> ::= (
+	less_than_operator           // <less than operator> ::= <
+	less_than_or_equals_operator // <less than or equals operator> ::= <=
+	literal_identifier           // foo or "foo" (delimited)
+	literal_number               // 123
+	literal_string               // 'hello'
+	minus_sign                   // <minus sign> ::= -
+	not_equals_operator          // <not equals operator> ::= <>
+	period                       // <period> ::= .
+	plus_sign                    // <plus sign> ::= +
+	right_paren                  // <right paren> ::= )
+	semicolon                    // <semicolon> ::= ;
+	solidus                      // <solidus> ::= /
 }
 
 struct Token {

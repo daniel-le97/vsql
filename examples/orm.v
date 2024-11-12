@@ -9,7 +9,7 @@ fn main() {
 }
 
 // NOTE for some reason if we declare a @[primary] on a struct field, we can not do delete queries on the tables...
-// so id is not a primary key in this example
+// https://github.com/elliotchance/vsql/issues/200
 struct Product {
 	id           int //@[primary]
 	product_name string @[sql_type: 'varchar(100)']
@@ -30,7 +30,6 @@ fn example() ! {
 		Product{3, 'Bagel', 1.25},
 	]
 
-	// product := Product{1, 'Ice Cream', 5.99}
 	for product in products {
 		sql db {
 			insert product into Product
